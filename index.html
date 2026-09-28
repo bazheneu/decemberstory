@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Не в этот раз</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0E1424;
+    --bg-deep: #0A0F1D;
+    --panel: #161F38;
+    --panel-soft: #1B2542;
+    --bubble-in: #1F2A4C;
+    --bubble-out: #2A3A63;
+    --text: #ECE9DF;
+    --muted: #97A0BE;
+    --muted-dim: #6C7494;
+    --gold: #D8AA5C;
+    --gold-soft: rgba(216,170,92,0.14);
+    --danger: #C1584F;
+    --danger-soft: rgba(193,88,79,0.14);
+    --safe: #6FA88C;
+    --safe-soft: rgba(111,168,140,0.14);
+    --line: rgba(255,255,255,0.08);
+    --radius: 16px;
+  }
+  :root[data-theme="light"]{
+    --bg:#EFEAE0; --bg-deep:#E6E0D2; --panel:#FFFFFF; --panel-soft:#F7F3E9;
+    --bubble-in:#F1ECE0; --bubble-out:#E6D2A8; --text:#1E2233; --muted:#5B6178;
+    --muted-dim:#8A8F9F; --gold:#B5822F; --gold-soft:rgba(181,130,47,0.14);
+    --danger:#A6392F; --danger-soft:rgba(166,57,47,0.1); --safe:#3F7A5C;
+    --safe-soft:rgba(63,122,92,0.12); --line:rgba(20,20,30,0.1);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(120% 140% at 50% -10%, #172142 0%, var(--bg) 45%, var(--bg-deep) 100%);
+    color: var(--text);
+    font-family: 'Roboto', system-ui, sans-serif;
+    min-height: 100vh;
+    display:flex; justify-content:center;
+    padding: 28px 14px 90px;
+    position:relative;
+    overflow-x:hidden;
+  }
+  :root[data-theme="light"] body{ background: radial-gradient(120% 140% at 50% -10%, #FBF6E9 0%, var(--bg) 55%, var(--bg-deep) 100%); }
+
+  .snow{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden;}
+  .flake{position:absolute; top:-10px; background:var(--gold); opacity:0.22; border-radius:50%; animation: fall linear infinite;}
+  @keyframes fall{ to { transform: translateY(110vh) translateX(10px); } }
+  @media (prefers-reduced-motion: reduce){ .flake{animation:none; display:none;} }
+
+  .app{ position:relative; z-index:1; width:100%; max-width:600px; }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:18px; gap:10px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; font-family:'Roboto', sans-serif; font-size:16px; color:var(--text); }
+  .brand-mark{
+    width:30px; height:30px; border-radius:50%;
+    background: conic-gradient(from 200deg, var(--gold), #8E6A2C, var(--gold));
+    flex-shrink:0;
+  }
+  .progress-pill{
+    font-size:12.5px; color:var(--muted); background:var(--panel-soft);
+    border:1px solid var(--line); padding:6px 12px; border-radius:100px;
+    white-space:nowrap;
+  }
+
+  .card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 24px 22px;
+    min-height: 360px;
+    display:flex; flex-direction:column;
+    box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5);
+  }
+
+  .narr-title{
+    font-family:'Roboto', sans-serif; font-weight:600; font-size:26px;
+    line-height:1.25; margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .narr-body{ font-family:'Roboto', sans-serif; font-style:normal; font-size:21px;
+    line-height:1.6; color: #DCD8CC; max-width: 62ch;}
+  :root[data-theme="light"] .narr-body{ color:#3A3D4C; }
+
+  .contact{
+    display:flex; align-items:center; gap:10px;
+    padding-bottom:14px; margin-bottom:14px; border-bottom:1px solid var(--line);
+  }
+  .avatar{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Roboto', sans-serif; font-weight:600; font-size:15px;
+    color:#161F38; background: linear-gradient(160deg, var(--gold), #B98A3C);
+  }
+  .avatar.group{ background: linear-gradient(160deg, #7C86AC, #4F587E); color:#EDEFF7;}
+  .contact-meta{ line-height:1.3; }
+  .contact-name{ font-size:16.5px; font-weight:600; }
+  .contact-status{ font-size:14px; color: var(--muted-dim); }
+
+  .messages{ display:flex; flex-direction:column; gap:9px; margin-bottom:6px; flex:1;}
+  .msg{
+    max-width: 78%;
+    padding: 11px 14px;
+    border-radius: 14px;
+    font-size: 16.5px;
+    line-height:1.48;
+    opacity:0; transform: translateY(6px);
+    animation: msgIn .35s ease forwards;
+  }
+  @keyframes msgIn{ to{ opacity:1; transform:translateY(0);} }
+  .msg.in{ background: var(--bubble-in); align-self:flex-start; border-bottom-left-radius:4px;}
+  .msg.out{ background: var(--bubble-out); align-self:flex-end; border-bottom-right-radius:4px; }
+  .msg.voice{ display:flex; align-items:center; gap:8px; font-style:italic; color:var(--muted); }
+  .typing{
+    align-self:flex-start; display:flex; gap:4px; padding:11px 14px;
+    background:var(--bubble-in); border-radius:14px; border-bottom-left-radius:4px;
+  }
+  .typing span{ width:5px; height:5px; border-radius:50%; background:var(--muted); opacity:.5; animation: bounce 1s infinite ease-in-out; }
+  .typing span:nth-child(2){ animation-delay:.15s; }
+  .typing span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce{ 0%,60%,100%{ transform:translateY(0); opacity:.4;} 30%{ transform:translateY(-3px); opacity:1;} }
+
+  .choice-prompt{ font-size:16.5px; color:var(--muted); margin: 4px 0 14px; }
+  .choices{ display:flex; flex-direction:column; gap:9px; }
+  .choice-btn{
+    text-align:left; background:var(--panel-soft); border:1px solid var(--line);
+    color:var(--text); padding:14px 16px; border-radius:12px; font-size:16px;
+    font-family:'Roboto',sans-serif; cursor:pointer; transition: border-color .15s ease, background .15s ease;
+    line-height:1.42;
+  }
+  .choice-btn:hover{ border-color: var(--gold); background: var(--gold-soft); }
+
+  .reflect{
+    border-left: 3px solid var(--gold);
+    background: var(--gold-soft);
+    padding: 16px 18px; border-radius: 0 10px 10px 0;
+    font-family:'Roboto', sans-serif; font-style:normal; font-size:18px; line-height:1.55;
+    color:#EADFC6;
+  }
+  :root[data-theme="light"] .reflect{ color:#4A3A18; }
+
+  .ending{
+    padding: 16px 18px; border-radius: 10px; font-size:17px; line-height:1.55;
+  }
+  .ending.lost{ background: var(--danger-soft); border:1px solid rgba(193,88,79,0.3); }
+  .ending.safe{ background: var(--safe-soft); border:1px solid rgba(111,168,140,0.3); }
+
+  .recovery{ margin-top:14px; }
+  .recovery h4{ font-size:14.5px; color:var(--muted); margin:0 0 8px; font-weight:600;}
+  .recovery ol{ margin:0; padding-left:18px; font-size:16px; line-height:1.55; color:var(--text); }
+  .recovery li{ margin-bottom:6px; }
+
+  .profile-card{
+    background:var(--panel-soft); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; margin-bottom:6px;
+  }
+  .profile-card .avatar{ width:44px; height:44px; font-size:16px; margin-bottom:10px;}
+  .profile-card h3{ margin:0 0 2px; font-family:'Roboto', sans-serif; font-size:17px; }
+  .profile-card .handle{ color:var(--muted-dim); font-size:14px; margin-bottom:10px;}
+  .profile-card .fact{ font-size:15.5px; padding:9px 0; border-top:1px solid var(--line); color:var(--muted); }
+  .profile-card .fact b{ color:var(--text); font-weight:600; }
+
+  .actions{ margin-top:20px; display:flex; justify-content:flex-end; }
+  .btn-next{
+    background: var(--gold); color:#1B1406; border:none; padding:11px 22px;
+    border-radius:100px; font-family:'Roboto',sans-serif; font-weight:600; font-size:14px;
+    cursor:pointer; transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn-next:hover{ transform: translateY(-1px); }
+  .btn-ghost{
+    background:transparent; border:1px solid var(--line); color:var(--muted);
+    padding:10px 18px; border-radius:100px; font-size:13.5px; cursor:pointer; font-family:'Roboto',sans-serif;
+  }
+  .btn-ghost:hover{ border-color: var(--gold); color: var(--gold); }
+
+  .intro-eyebrow{ color:var(--gold); font-size:13px; font-weight:600; margin-bottom:10px; }
+  .intro-lead{ font-size:18px; color:var(--muted); line-height:1.6; margin: 4px 0 22px; max-width:56ch; }
+  .start-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+
+  .recap-title{ font-family:'Roboto', sans-serif; font-weight:600; font-size:21px; line-height:1.35; margin:0 0 16px; }
+  .recap-list{ list-style:none; padding:0; margin: 4px 0 20px; display:flex; flex-direction:column; gap:10px;}
+  .recap-list li{
+    display:flex; gap:12px; align-items:flex-start; font-size:16.5px; line-height:1.5;
+    padding:13px 15px; background:var(--panel-soft); border-radius:12px; border:1px solid var(--line);
+  }
+  .recap-dot{ width:7px; height:7px; border-radius:50%; background:var(--gold); margin-top:8px; flex-shrink:0;}
+  .recap-final{ font-family:'Roboto', sans-serif; font-style:normal; font-size:18px; line-height:1.55; color:#EADFC6; margin-top:4px;}
+  :root[data-theme="light"] .recap-final{ color:#3A3D4C; }
+
+  .theme-toggle{
+    position:fixed; bottom:16px; right:16px; z-index:2;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:15px;
+  }
+
+  .voice-btn{
+    position:fixed; bottom:16px; left:16px; z-index:2;
+    background:var(--panel); border:1px solid var(--line); color:var(--muted);
+    width:52px; height:52px; border-radius:50%; cursor:pointer; font-size:21px;
+    display:flex; align-items:center; justify-content:center;
+    transition: border-color .2s ease, color .2s ease;
+  }
+  .voice-btn.available{ color:var(--gold); border-color: var(--gold); }
+  .voice-btn.pulse{ animation: pulseGlow 1.6s ease-in-out infinite; }
+  @keyframes pulseGlow{
+    0%,100%{ box-shadow: 0 0 0 0 rgba(216,170,92,0.45); }
+    50%{ box-shadow: 0 0 0 9px rgba(216,170,92,0); }
+  }
+  .voice-label{
+    position:fixed; bottom:24px; left:76px; z-index:2;
+    font-size:12.5px; color:var(--muted-dim); background:var(--panel);
+    border:1px solid var(--line); padding:5px 10px; border-radius:100px;
+    pointer-events:none; opacity:0; transition:opacity .2s ease;
+  }
+  .voice-label.show{ opacity:1; }
+  .voice-label.pinned{ opacity:1; }
+
+  @media (max-width:480px){
+    .card{ padding:20px 16px 18px; }
+    .narr-title{ font-size:22px; }
+    .voice-label{ display:none; }
+  }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(6,9,18,0.65); backdrop-filter: blur(2px);
+    display:flex; align-items:center; justify-content:center; z-index:10; padding:20px;
+    opacity:0; pointer-events:none; transition:opacity .18s ease;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:all; }
+  .modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:22px; max-width:340px; width:100%;
+  }
+  .modal.voice-modal{
+    border-left: 3px solid var(--gold);
+  }
+  .modal .modal-eyebrow{ font-size:11.5px; font-weight:600; color:var(--gold); margin-bottom:8px; }
+  .modal .modal-text{ font-family:'Roboto', sans-serif; font-style:normal; font-size:18px; line-height:1.55; color:var(--text); }
+  .modal .modal-text.muted{ color:var(--muted); font-style:normal; font-family:'Roboto',sans-serif; font-size:16px; }
+  .modal-close{ margin-top:16px; width:100%; }
+</style>
+</head>
+<body>
+
+<div class="snow" id="snow"></div>
+<button class="theme-toggle" id="themeToggle" title="Светлая/тёмная тема">◐</button>
+<button class="voice-btn" id="voiceBtn" title="Внутренний голос">💭</button>
+<div class="voice-label" id="voiceLabel">Внутренний голос</div>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="brand-mark"></div>Не в этот раз</div>
+    <div class="progress-pill" id="progressPill">Перед началом</div>
+  </div>
+  <div class="card" id="card"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+/* ---------- content ---------- */
+
+const STORY1 = {
+  contact: { name: "Мария", initial: "М", status: "организатор фотосессий" },
+  start: "s1_start",
+  nodes: {
+
+    s1_start: { type:"narr",
+      body:"Две недели до Нового года. Ты листаешь канал «Уютные локации в твоём городе» — там пост: «Новогодние мини-сессии, 15 минут, гирлянды и мандарины». Ты пишешь в комментариях: «Хочу! Есть места на этой неделе?» и закрываешь приложение.",
+      next:"s1_dm1" },
+
+    s1_dm1: { type:"chat",
+      messages:[
+        {who:"in", text:"Добрый вечер! 🎄"},
+        {who:"in", text:"Да, как раз есть окошко в субботу в 15:00 — могу забронировать за вами"}
+      ], next:"s1_c1" },
+
+    s1_c1: { type:"choice",
+      prompt:"Прошло меньше минуты с комментария. Что делаешь?",
+      options:[
+        {label:"Отлично, здорово что так быстро откликнулись!", next:"s1_dm2a"},
+        {label:"Странно, что ответили мгновенно — спросить, почему так быстро", next:"s1_dm2b"}
+      ]},
+
+    s1_dm2a: { type:"chat",
+      messages:[{who:"in", text:"Записываю вас на субботу, 15:00 🎄"}],
+      voice:{available:true, text:"Быстрый ответ — сам по себе не подозрителен: у маленького бизнеса перед праздниками так и правда бывает. Скорость ответа — плохой ориентир для оценки, доверять ей или нет."},
+      next:"s1_dm3" },
+
+    s1_dm2b: { type:"chat",
+      messages:[
+        {who:"out", text:"О, вы прямо сразу ответили — мониторите комменты?"},
+        {who:"in", text:"Ахах да 🙈 сезон сейчас такой, стараюсь никого не терять — а то уходят в личку и забывают, а слоты быстро разбирают"}
+      ],
+      voice:{available:true, text:"Быстрый ответ — сам по себе не подозрителен: у маленького бизнеса перед праздниками так и правда бывает. Скорость ответа — плохой ориентир для оценки, доверять ей или нет."},
+      next:"s1_dm3" },
+
+    s1_dm3: { type:"chat",
+      messages:[{who:"in", text:"Для брони нужна предоплата — 500₽. Без неё, честно, часто не приходят, и слот простаивает 🙏 Скинуть номер карты?"}],
+      next:"s1_c2" },
+
+    s1_c2: { type:"choice",
+      prompt:"Что ответить?",
+      options:[
+        {label:"Хорошо, скидывайте номер — переведу", next:"s1_dm4"},
+        {label:"А можно оплатить при встрече?", next:"s1_dm3b"}
+      ]},
+
+    s1_dm3b: { type:"chat",
+      messages:[{who:"in", text:"Можно, но тогда держим слот только 30 минут после брони — в очереди ещё двое 🙈"}],
+      voice:{available:true, text:"Ограничение по времени звучит логично — так же ведёт себя и настоящая небольшая студия. На глаз отличить обычную политику брони от давления почти невозможно."},
+      next:"s1_dm4" },
+
+    s1_dm4: { type:"chat",
+      messages:[{who:"in", text:"Вот номер: 2200 •••• •••• 4471, получатель Мария М. Переведите в течение 10 минут, пожалуйста — а то отдам слот следующей в очереди ✨"}],
+      next:"s1_c3" },
+
+    s1_c3: { type:"choice",
+      prompt:"Что делаешь дальше?",
+      options:[
+        {label:"Перевести сейчас, чего тянуть", next:"s1_end_lost"},
+        {label:"Проверить профиль Марии", next:"s1_profile"},
+        {label:"Поискать в описании канала официальный контакт и написать напрямую", next:"s1_verify"}
+      ]},
+
+    s1_profile: { type:"profile",
+      name:"Мария", handle:"@m_photostudio80",
+      facts:[
+        {k:"Имя изменено", v:"2 дня назад (было: User80412)"},
+        {k:"Фото профиля", v:"добавлено вместе с новым именем"},
+        {k:"В сети", v:"только что"}
+      ],
+      voice:{available:true, text:"Смена имени и фото два дня назад — тревожный звоночек, но не стопроцентное доказательство: люди меняют аккаунты по десятку причин. Одного этого факта мало, чтобы быть уверенной, — но достаточно, чтобы не торопиться."},
+      next:"s1_c3b" },
+
+    s1_c3b: { type:"choice",
+      prompt:"Профиль смущает, но не доказывает ничего наверняка. Что делаешь?",
+      options:[
+        {label:"Перевести всё равно — мало ли, может у неё просто новый аккаунт для работы", next:"s1_end_lost"},
+        {label:"Поискать в описании канала официальный контакт и написать напрямую", next:"s1_verify"}
+      ]},
+
+    s1_verify: { type:"chat",
+      contactOverride:{name:"Официальный аккаунт канала", initial:"К", group:true, status:"из описания канала"},
+      messages:[
+        {who:"out", text:"Здравствуйте! Мне в комментариях написала «Мария» и попросила предоплату за фотосессию — это от вас?"},
+        {who:"in", text:"Мария? У нас никто с таким именем не работает, мы никого не нанимали на приём заявок — это точно не от нас, спасибо, что сообщили!"}
+      ], next:"s1_end_safe" },
+
+    s1_end_lost: { type:"ending", outcome:"lost",
+      text:"Ты переводишь 500₽. Через десять минут — новое сообщение: «Ой, банк завис, платёж не прошёл, скиньте ещё разок?» Проходит двадцать минут — «Мария» исчезает вместе с деньгами и мечтой о фото у ёлки.",
+      recovery:[
+        "Сделать скрин переписки и реквизитов получателя.",
+        "Сообщить в поддержку своего банка о переводе мошеннику — иногда успевают заблокировать счёт получателя.",
+        "Пожаловаться на аккаунт в поддержку мессенджера.",
+        "Если переписка велась в рабочее время или с рабочего устройства — сообщить в ИБ компании: по одной схеме часто бьют сразу нескольких коллег."
+      ],
+      next:"s1_reflect_final" },
+
+    s1_end_safe: { type:"ending", outcome:"safe",
+      text:"Ты блокируешь «Марию» и предупреждаешь остальных в комментариях. Настоящую фотосессию в итоге находишь там же, в канале — просто у организатора, который отвечает куда медленнее.",
+      next:"s1_reflect_final" },
+
+    s1_reflect_final: { type:"reflect",
+      text:"Здесь сработали не паника и не угроза, а маленькая, необидная сумма («500 рублей — не жалко») и ощущение уходящей возможности. Профиль можно было проверить, но и это не давало полной ясности: настоящую определённость дал только независимый канал связи — прямое обращение к официальному контакту, а не тому же собеседнику.",
+      next:"__NEXT_STORY__" }
+  }
+};
+
+const STORY2 = {
+  contact: { name: "Оля", initial: "О", status: "собирает на корпоратив" },
+  start: "s2_start",
+  nodes: {
+
+    s2_start: { type:"narr",
+      body:"Три дня до корпоратива. Обеденный перерыв. В личных сообщениях рабочего чата — сообщение от коллеги, которая в этом году занимается сбором денег на корпоратив.",
+      next:"s2_dm1" },
+
+    s2_dm1: { type:"chat",
+      messages:[{who:"in", text:"Привет! Слушай, неудобно писать — не одолжишь 15 000 до вечера? Нужно закрыть заказ по фуршету, у меня лимит по карте закончился, завтра с утра верну — как раз зарплата придёт 🙏"}],
+      next:"s2_c1" },
+
+    s2_c1: { type:"choice",
+      prompt:"Что-то показалось необычным?",
+      options:[
+        {label:"Странно — обычно она пишет иначе, а тут как будто по шаблону", next:"s2_dm2a"},
+        {label:"Да нормально, наверное просто торопится", next:"s2_dm2b"}
+      ]},
+
+    s2_dm2a: { type:"chat",
+      messages:[
+        {who:"out", text:"Конечно, без проблем! А на какую карту?"},
+        {who:"in", text:"Скинь на карту мужа, так быстрее — 5536 •••• •••• 2290, Иван Т."}
+      ],
+      voice:{available:true, text:"Мелочь, конечно. Мало ли — может, правда набирала на автомате, между делом."},
+      next:"s2_c2" },
+
+    s2_dm2b: { type:"chat",
+      messages:[
+        {who:"out", text:"Конечно, без проблем! А на какую карту?"},
+        {who:"in", text:"Скинь на карту мужа, так быстрее — 5536 •••• •••• 2290, Иван Т."}
+      ],
+      voice:{available:true, text:"И правда: перед праздниками все пишут второпях, это ни о чём не говорит само по себе."},
+      next:"s2_c2" },
+
+    s2_c2: { type:"choice",
+      prompt:"Карта оформлена не на неё. Что делаешь?",
+      options:[
+        {label:"Перевести — она же объяснила, что это карта мужа", next:"s2_end_lost"},
+        {label:"Сначала позвонить, уточнить голосом", next:"s2_call"}
+      ]},
+
+    s2_call: { type:"narr",
+      body:"Гудки… потом — «Абонент временно недоступен».",
+      voice:{available:true, text:"Не дозвониться — это нормально, если человек правда занят. Но это же значит, что подтвердить личность через тот же самый контакт больше нельзя. Нужен канал, который мошенник не контролирует."},
+      next:"s2_c3" },
+
+    s2_c3: { type:"choice",
+      prompt:"Не дозвонился(-ась). Что дальше?",
+      options:[
+        {label:"Написать в общий чат отдела в открытую: «Ты просила у меня денег?»", next:"s2_open_chat"},
+        {label:"Попросить голосовое — чтобы убедиться, что это точно она", next:"s2_voice"},
+        {label:"Всё равно перевести, раз дело срочное", next:"s2_end_lost"}
+      ]},
+
+    s2_voice: { type:"chat",
+      messages:[{who:"in", voice:true, text:"🎤 0:07 — «Ну ты видела? Скинь, пожалуйста, очень надо, потом объясню!»"}],
+      next:"s2_c4" },
+
+    s2_c4: { type:"choice",
+      prompt:"Голос — точно её. Переводить?",
+      voice:{available:true, text:"Голос и видео в 2026 году — больше не доказательство личности: их можно синтезировать по паре голосовых из того же взломанного чата."},
+      options:[
+        {label:"Да, раз голос её — можно доверять", next:"s2_end_lost"},
+        {label:"Всё равно сначала написать в общий чат отдела", next:"s2_open_chat"}
+      ]},
+
+    s2_open_chat: { type:"chat",
+      contactOverride:{name:"Общий чат отдела", initial:"К", group:true, status:"12 участников"},
+      messages:[
+        {who:"out", text:"Оль, ты просила у меня денег в личку только что?"},
+        {who:"in", text:"Какие деньги?? У меня телефон час назад тупил — наверное, взломали. Никому ничего не переводите!!"}
+      ], next:"s2_end_safe" },
+
+    s2_end_lost: { type:"ending", outcome:"lost",
+      text:"Ты переводишь 15 000₽. Через полчаса в общем чате отдела — сообщение: «❗❗Ребята, меня взломали в телеграме, пожалуйста, будьте внимательны и не переводите мне ничего». Ты молча смотришь в потолок и думаешь, как объяснить пропавшие деньги за фуршет.",
+      recovery:[
+        "Сразу написать в общий чат отдела и руководителю — чем раньше все узнают, тем меньше шанс, что попадётся кто-то ещё.",
+        "Если взломан ваш аккаунт — сменить пароль и завершить все активные сеансы на всех устройствах.",
+        "Сообщить в ИБ компании: рабочий мессенджер использовали как канал атаки — это их профиль работы, а не повод для неловкости."
+      ],
+      next:"s2_reflect_final" },
+
+    s2_end_safe: { type:"ending", outcome:"safe",
+      text:"Схему ловят до перевода. Коллега меняет пароль и рассылает предупреждение по отделу, а ты получаешь статус негласного детектива недели.",
+      next:"s2_reflect_final" },
+
+    s2_reflect_final: { type:"reflect",
+      text:"Дело было не в необычном тоне (слабый сигнал) и не в чужой карте (у людей правда бывают семейные счета). Дело в том, что голос и видео в 2026 году — больше не доказательство личности: их можно синтезировать по паре голосовых из того же взломанного чата. Надёжна только проверка через независимый канал — не тот же чат, не тот же голос.",
+      next:"__FINAL__" }
+  }
+};
+
+/* ---------- engine ---------- */
+
+let currentStory = null;
+let currentVoice = null; // {available, text} for the node on screen
+
+const cardEl = document.getElementById('card');
+const progressEl = document.getElementById('progressPill');
+const voiceBtn = document.getElementById('voiceBtn');
+const voiceLabel = document.getElementById('voiceLabel');
+
+function setVoiceState(voice){
+  currentVoice = voice && voice.available ? voice : {available:false};
+  voiceBtn.classList.toggle('available', currentVoice.available);
+  voiceBtn.classList.toggle('pulse', currentVoice.available);
+}
+
+function showVoiceHidden(){
+  voiceBtn.style.display = 'none';
+  voiceLabel.style.display = 'none';
+}
+function showVoiceVisible(pinLabel){
+  voiceBtn.style.display = 'flex';
+  voiceLabel.style.display = 'block';
+  voiceLabel.classList.toggle('pinned', !!pinLabel);
+}
+
+const topbarEl = document.querySelector('.topbar');
+function hideTopbar(){ topbarEl.style.display = 'none'; }
+function showTopbar(){ topbarEl.style.display = 'flex'; }
+
+voiceBtn.onclick = () => {
+  if(currentVoice && currentVoice.available){
+    openModal(`<div class="modal-eyebrow">Внутренний голос</div><div class="modal-text">${currentVoice.text}</div>`, true);
+  } else {
+    openModal(`<div class="modal-text muted">Внутренний голос пока молчит.</div>`, false);
+  }
+};
+
+function renderIntro(){
+  hideTopbar();
+  currentStory = null;
+  setVoiceState({available:false});
+  showVoiceVisible(true);
+  cardEl.innerHTML = `
+    <div class="intro-lead">С мошенничеством в интернете может столкнуться каждый — в момент, когда меньше всего ждёшь. Здесь ты увидишь две обычные истории и проверишь, как повёл бы себя сам. Если засомневаешься — сверься с внутренним голосом: кнопка внизу слева мигает, когда ему есть что сказать.</div>
+    <div class="start-row">
+      <button class="btn-next" id="beginBtn">Начать</button>
+    </div>
+  `;
+  document.getElementById('beginBtn').onclick = () => startStory(STORY1);
+}
+
+function startStory(story){
+  currentStory = story;
+  showTopbar();
+  progressEl.textContent = story === STORY1 ? "История 1 из 2" : "История 2 из 2";
+  showVoiceVisible(false);
+  renderNode(story.start);
+}
+
+function renderNode(nodeId){
+  if(nodeId === "__NEXT_STORY__"){ return renderStoryBridge(); }
+  if(nodeId === "__FINAL__"){ return renderFinal(); }
+  const node = currentStory.nodes[nodeId];
+  if(!node){ console.warn("missing node", nodeId); return; }
+
+  setVoiceState(node.voice);
+
+  if(node.type === "narr") return renderNarr(node);
+  if(node.type === "chat") return renderChat(node);
+  if(node.type === "choice") return renderChoice(node);
+  if(node.type === "reflect") return renderReflect(node);
+  if(node.type === "ending") return renderEnding(node);
+  if(node.type === "profile") return renderProfile(node);
+}
+
+function renderNarr(node){
+  cardEl.innerHTML = `
+    <p class="narr-body">${node.body}</p>
+    <div class="actions"><button class="btn-next" id="nextBtn">Дальше →</button></div>
+  `;
+  document.getElementById('nextBtn').onclick = () => renderNode(node.next);
+}
+
+function renderChat(node){
+  const base = currentStory.contact;
+  const c = node.contactOverride || base;
+  const group = !!c.group;
+
+  cardEl.innerHTML = `
+    <div class="contact">
+      <div class="avatar ${group?'group':''}">${c.initial}</div>
+      <div class="contact-meta">
+        <div class="contact-name">${c.name}</div>
+        <div class="contact-status">${c.status || ''}</div>
+      </div>
+    </div>
+    <div class="messages" id="msgArea"></div>
+    <div class="actions"><button class="btn-next" id="nextBtn" style="display:none">Дальше →</button></div>
+  `;
+
+  const msgArea = document.getElementById('msgArea');
+  const nextBtn = document.getElementById('nextBtn');
+  let i = 0;
+
+  function showNext(){
+    if(i >= node.messages.length){
+      nextBtn.style.display = 'inline-block';
+      return;
+    }
+    const m = node.messages[i];
+    if(m.who === 'in'){
+      const typing = document.createElement('div');
+      typing.className = 'typing';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+      msgArea.appendChild(typing);
+      setTimeout(() => {
+        typing.remove();
+        appendMsg(m);
+        i++;
+        showNext();
+      }, 550);
+    } else {
+      setTimeout(() => { appendMsg(m); i++; showNext(); }, 250);
+    }
+  }
+
+  function appendMsg(m){
+    const div = document.createElement('div');
+    div.className = 'msg ' + m.who + (m.voice ? ' voice' : '');
+    div.textContent = m.text;
+    msgArea.appendChild(div);
+  }
+
+  showNext();
+  nextBtn.onclick = () => renderNode(node.next);
+}
+
+function renderChoice(node){
+  cardEl.innerHTML = `
+    <p class="choice-prompt">${node.prompt}</p>
+    <div class="choices">
+      ${node.options.map((o,idx) => `<button class="choice-btn" data-idx="${idx}">${o.label}</button>`).join("")}
+    </div>
+  `;
+  cardEl.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.onclick = () => renderNode(node.options[+btn.dataset.idx].next);
+  });
+}
+
+function renderProfile(node){
+  cardEl.innerHTML = `
+    <div class="profile-card">
+      <div class="avatar">${node.name[0]}</div>
+      <h3>${node.name}</h3>
+      <div class="handle">${node.handle}</div>
+      ${node.facts.map(f => `<div class="fact"><b>${f.k}:</b> ${f.v}</div>`).join("")}
+    </div>
+    <div class="actions"><button class="btn-next" id="nextBtn">Дальше →</button></div>
+  `;
+  document.getElementById('nextBtn').onclick = () => renderNode(node.next);
+}
+
+function renderReflect(node){
+  cardEl.innerHTML = `
+    <div class="reflect">${node.text}</div>
+    <div class="actions"><button class="btn-next" id="nextBtn">Дальше →</button></div>
+  `;
+  document.getElementById('nextBtn').onclick = () => renderNode(node.next);
+}
+
+function renderEnding(node){
+  let html = `<div class="ending ${node.outcome}">${node.text}</div>`;
+  if(node.outcome === 'lost' && node.recovery){
+    html += `
+      <div class="recovery">
+        <h4>Если это случилось по-настоящему</h4>
+        <ol>${node.recovery.map(r => `<li>${r}</li>`).join("")}</ol>
+      </div>
+    `;
+  }
+  html += `<div class="actions"><button class="btn-next" id="nextBtn">Дальше →</button></div>`;
+  cardEl.innerHTML = html;
+  document.getElementById('nextBtn').onclick = () => renderNode(node.next);
+}
+
+function renderStoryBridge(){
+  setVoiceState({available:false});
+  cardEl.innerHTML = `
+    <p class="narr-body">Тот же декабрь, другой день. Вторая история — про рабочий чат и человека, отказать которому неловко.</p>
+    <div class="actions"><button class="btn-next" id="nextBtn">Дальше →</button></div>
+  `;
+  document.getElementById('nextBtn').onclick = () => startStory(STORY2);
+}
+
+function renderFinal(){
+  setVoiceState({available:false});
+  progressEl.textContent = "Готово";
+  cardEl.innerHTML = `
+    <p class="recap-title">Мошенники в этой истории использовали рычаги давления, которые работают без давления</p>
+    <ul class="recap-list">
+      <li><span class="recap-dot"></span>Ощущение уходящей возможности — «места разбирают», «отдам следующему».</li>
+      <li><span class="recap-dot"></span>Маленькая, необидная сумма — её не жалко потерять «на всякий случай».</li>
+      <li><span class="recap-dot"></span>Неловкость отказать своему человеку, который просит по-человечески.</li>
+      <li><span class="recap-dot"></span>Правдоподобная бытовая деталь — карта мужа, знакомый голос, обычная политика брони.</li>
+      <li><span class="recap-dot"></span>Ощущение, что думать некогда.</li>
+    </ul>
+    <p class="recap-final">Так работает психология мошенничества, и в таких ситуациях может не помочь ни логика, ни эмоции — мошенник играет именно на них. Всегда, когда вас просят перевести деньги кому-то, единственная по-настоящему надёжная проверка — независимый канал связи: звонок, другой чат, вопрос вслух при всех. Если подтвердить нечем, кроме того же самого чата — не доверяйся.</p>
+    <div class="actions"><button class="btn-ghost" id="restartBtn">Пройти ещё раз</button></div>
+  `;
+  document.getElementById('restartBtn').onclick = () => renderIntro();
+}
+
+/* ---------- modal ---------- */
+const overlay = document.getElementById('modalOverlay');
+const modalContent = document.getElementById('modalContent');
+
+function openModal(innerHtml, isVoice){
+  modalContent.className = 'modal' + (isVoice ? ' voice-modal' : '');
+  modalContent.innerHTML = `${innerHtml}<button class="btn-ghost modal-close" id="closeModal">Закрыть</button>`;
+  overlay.classList.add('open');
+  document.getElementById('closeModal').onclick = closeModal;
+}
+function closeModal(){ overlay.classList.remove('open'); }
+overlay.onclick = (e) => { if(e.target === overlay) closeModal(); };
+
+/* ---------- theme ---------- */
+const themeToggle = document.getElementById('themeToggle');
+themeToggle.onclick = () => {
+  const root = document.documentElement;
+  const isLight = root.getAttribute('data-theme') === 'light';
+  root.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  try{ localStorage.setItem('scamStoryTheme', isLight ? 'dark' : 'light'); }catch(e){}
+};
+try{
+  const saved = localStorage.getItem('scamStoryTheme');
+  if(saved === 'light') document.documentElement.setAttribute('data-theme','light');
+}catch(e){}
+
+/* ---------- voice label hover hint ---------- */
+voiceBtn.addEventListener('mouseenter', () => voiceLabel.classList.add('show'));
+voiceBtn.addEventListener('mouseleave', () => voiceLabel.classList.remove('show'));
+
+/* ---------- snow ---------- */
+(function(){
+  const snow = document.getElementById('snow');
+  const count = window.innerWidth < 500 ? 10 : 16;
+  for(let i=0;i<count;i++){
+    const f = document.createElement('div');
+    f.className = 'flake';
+    const size = 2 + Math.random()*3;
+    f.style.width = size+'px';
+    f.style.height = size+'px';
+    f.style.left = Math.random()*100+'vw';
+    f.style.animationDuration = (12 + Math.random()*10)+'s';
+    f.style.animationDelay = (Math.random()*10)+'s';
+    snow.appendChild(f);
+  }
+})();
+
+/* ---------- boot ---------- */
+renderIntro();
+</script>
+</body>
+</html>
